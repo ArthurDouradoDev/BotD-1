@@ -11,12 +11,12 @@ Automatizar o processo diário de login com pausas manuais necessárias (Authent
 - **Gestão de Tempo e Datas:** Módulo `datetime` para calcular automaticamente o dia de ontem (D-1) baseando-se na data do sistema host e convertendo para o formato exigido na submissão de formulários (`dd/mm/yyyy`).
 - **Automação de E-mail:** `win32com.client` (PyWin32). Interage perfeitamente com a sessão local do portal Microsoft Outlook aberta na máquina sem necessidade de portas de SMTP na rede TIM.
 - **Configurações e Segurança:** `python-dotenv` para isolar senhas e login corporativo (`T3755000@...`) de forma não fixada (`hard-coded`) no script da automação.
-- **Interface Gráfica (UI):** `customtkinter` para criar uma janela baseada em eventos, exibindo o status atual do robô ao usuário (ex: "Realizando Login...", "Baixando 4G..."). Os ícones do aplicativo (`d-1bot.ico` e `d-1bot.png`) serão carregados para configurar a logotipia da janela e da barra de tarefas.
+- **Interface Gráfica (UI):** `customtkinter` para criar uma janela baseada em eventos, exibindo o status atual do robô ao usuário (ex: "Realizando Login...", "Baixando 4G..."). Os ícones do aplicativo (`src/assets/d-1bot.ico` e `d-1bot.png`) serão carregados para configurar a logotipia da janela e da barra de tarefas.
 
 ## 3. RoadMap e Escopo das Fases de Desenvolvimento
 
 ### Fase 1: Inicialização e Verificação de Login Estratégico
-- **Feedback UI:** Iniciar a janela do CustomTkinter, definir o ícone (`d-1bot.ico`) e exibir status: *Iniciando Automação e Navegador...*. Por padrão, deve iniciar em tela cheia e o design deve ser no modo escuro.
+- **Feedback UI:** Iniciar a janela do CustomTkinter, definir o ícone (`src/assets/d-1bot.ico`) e exibir status: *Iniciando Automação e Navegador...*. Por padrão, deve iniciar em tela cheia e o design deve ser no modo escuro.
 - Iniciar um contexto persistente no navegador.
 - **Navegação Inicial:** Acessar a URL base de redirecionamento (`microstrategyqualidade.internal...`).
 - **Verificação de Estado:** O Bot verifica se foi redirecionado para a página de login da Microsoft ou se o Painel MicroStrategy já está visível.
@@ -71,4 +71,4 @@ Deve implementar a leitura dos elementos na ordem prescrita e conter resiliênci
 3. Condições prévias: Rede interna VPN ativada e Autenticador carregado.
 
 ## 5. Próximos Passos
-O próximo passo seria montar a interface via `customtkinter` utilizando a logotipia (`d-1bot`), configurar o carregamento das variáveis sensíveis e definir a inicialização assíncrona/thread do Selenium/Playwright rodando por trás da interface gráfica, pronto para o `main.py` disparar o bot.
+O próximo passo seria montar a interface via `customtkinter` utilizando a logotipia (`src/assets/d-1bot`), configurar o carregamento das variáveis sensíveis e definir a inicialização assíncrona/thread do Selenium/Playwright rodando por trás da interface gráfica, pronto para o `main.py` disparar o bot.
