@@ -193,12 +193,24 @@ class AutomaApp(ctk.CTk):
             chromium_found = glob.glob(os.path.join(browsers_path, "chromium-*", "chrome-win64", "chrome.exe"))
             if not chromium_found:
                 self.after(0, self.atualizar_status, "Chromium não encontrado. Instalando pela primeira vez (pode demorar)...")
-                from playwright._impl._driver import compute_driver_executable
-                driver = compute_driver_executable()
-                result = subprocess.run([str(driver), "install", "chromium"], capture_output=True, text=True)
-                if result.returncode != 0:
-                    raise Exception(result.stderr or result.stdout)
-                self.after(0, self.atualizar_status, "Chromium instalado com sucesso.")
+                
+                try:
+                    from playwright._impl._driver import compute_driver_executable
+                    driver = compute_driver_executable()
+                    
+                    # No Windows, compute_driver_executable retorna uma tupla (node, cli)
+                    if isinstance(driver, tuple):
+                        # driver[0] é o node.exe, driver[1] é o cli.js
+                        cmd = [driver[0], driver[1], "install", "chromium"]
+                    else:
+                        cmd = [str(driver), "install", "chromium"]
+                    
+                    result = subprocess.run(cmd, capture_output=True, text=True)
+                    if result.returncode != 0:
+                        raise Exception(result.stderr or result.stdout)
+                    self.after(0, self.atualizar_status, "Chromium instalado com sucesso.")
+                except ImportError:
+                    raise Exception("Erro: Playwright driver não encontrado no pacote.")
 
             with sync_playwright() as p:
                 browser = p.chromium.launch(headless=False, args=['--start-maximized'])
