@@ -1,6 +1,6 @@
 // Configurações do Repositório
 // Sugestão: Preencha com o nome do seu repositório privado
-const REPO = "USUARIO/NOME-DO-REPO"; 
+const REPO = "arthurdouradodev/BotD-1";
 
 async function updateDownloadLink() {
     const downloadBtn = document.getElementById('download-btn');
@@ -10,7 +10,7 @@ async function updateDownloadLink() {
     // Link padrão do GitHub que sempre redireciona para o download da última versão
     // Nota: Para repositórios privados, você precisará estar logado no GitHub no navegador.
     const latestDownloadUrl = `https://github.com/${REPO}/releases/latest/download/BotD1.exe`;
-    
+
     downloadBtn.href = latestDownloadUrl;
     repoLink.href = `https://github.com/${REPO}`;
 
