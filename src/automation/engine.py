@@ -30,10 +30,13 @@ def ensure_chromium_installed(callback_log):
         except Exception as e:
             raise Exception(f"Erro ao instalar Chromium: {e}")
 
-def create_persistent_context(playwright, user_data_path):
-    return playwright.chromium.launch_persistent_context(
-        user_data_dir=user_data_path,
+def launch_browser(playwright):
+    return playwright.chromium.launch(
         headless=False,
-        no_viewport=True,
         args=['--start-maximized']
+    )
+
+def create_standard_context(browser):
+    return browser.new_context(
+        no_viewport=True
     )

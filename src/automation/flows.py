@@ -1,5 +1,5 @@
 import os
-from .engine import ensure_chromium_installed, create_persistent_context
+from .engine import ensure_chromium_installed, launch_browser, create_standard_context
 from playwright.sync_api import sync_playwright
 
 def executar_fase1(callback_log, callback_finished):
@@ -7,13 +7,12 @@ def executar_fase1(callback_log, callback_finished):
     try:
         ensure_chromium_installed(callback_log)
         
-        user_data_path = os.path.join(os.getenv("APPDATA"), "BotD1", "profile")
-        
         with sync_playwright() as p:
-            callback_log("Iniciando navegador com perfil persistente...")
-            context = create_persistent_context(p, user_data_path)
+            callback_log("Iniciando navegador (Sessão Limpa)...")
+            browser = launch_browser(p)
+            context = create_standard_context(browser)
             
-            page = context.pages[0] if context.pages else context.new_page()
+            page = context.new_page()
             
             callback_log("Acessando URL base...")
             url = "https://microstrategyqualidade.internal.timbrasil.com.br/MicroStrategy/servlet/mstrWeb?continue"
@@ -61,6 +60,7 @@ def executar_fase1(callback_log, callback_finished):
             callback_log("Processo concluído com sucesso!")
             page.wait_for_timeout(5000) 
             context.close()
+            browser.close()
             callback_finished()
 
     except Exception as e:
