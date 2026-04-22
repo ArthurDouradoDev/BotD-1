@@ -133,14 +133,17 @@ class AutomaApp(ctk.CTk):
             self.after(0, lambda: UpdateDialog(self, update_info["version"], 
                                              lambda: self.realizar_update(update_info["url"])))
 
-    def realizar_update(self, url):
-        self.atualizar_status("Baixando atualização... Por favor, aguarde.")
+    def realizar_update(self, update_info):
+        self.atualizar_status("Iniciando processo de atualização...")
         
         def run_update():
-            new_exe = download_update(url, self.atualizar_status)
-            if new_exe:
-                self.after(0, self.atualizar_status, "Download concluído. Reiniciando...")
-                if apply_update(new_exe):
-                    self.quit()
+            success = download_update(update_info, self.atualizar_status)
+            if success:
+                if update_info["type"] == "app":
+                    self.after(0, self.atualizar_status, "App completo baixado. Reiniciando para aplicar...")
+                    # Aqui chamaria a lógica de aplicar o EXE (batch file)
+                else:
+                    self.after(0, self.atualizar_status, "Lógica atualizada com sucesso! Reinicie o bot para aplicar as mudanças.")
+                    # Como é modular, a nova lógica será carregada no próximo bootstrap (main.py)
 
         threading.Thread(target=run_update, daemon=True).start()
