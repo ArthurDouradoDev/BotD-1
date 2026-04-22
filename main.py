@@ -7,7 +7,7 @@ import requests
 import json
 import tempfile
 import shutil
-from dotenv import load_dotenv
+from dotenv import load_dotenv, set_key
 import customtkinter as ctk
 from PIL import Image
 from playwright.sync_api import sync_playwright
@@ -25,6 +25,52 @@ def resource_path(relative_path):
 
 # Carrega configurações do .env
 load_dotenv()
+
+class LoginConfigDialog(ctk.CTkToplevel):
+    def __init__(self, parent, callback):
+        super().__init__(parent)
+        self.callback = callback
+        
+        self.title("Primeiro Acesso - Configuração")
+        self.geometry("450x350")
+        self.grab_set() # Torna a janela modal
+        self.resizable(False, False)
+        
+        # Centralizar na tela
+        self.after(10, self.lift) # Garante que fique por cima
+        
+        # UI
+        ctk.set_appearance_mode("dark")
+        
+        self.lbl_title = ctk.CTkLabel(self, text="Configuração de Login", font=("Inter", 22, "bold"))
+        self.lbl_title.pack(pady=(30, 20))
+        
+        self.lbl_desc = ctk.CTkLabel(self, text="Insira suas credenciais da TIM para o MicroStrategy.\nEsses dados ficarão salvos apenas no seu computador.", 
+                                    font=("Inter", 12), text_color="#A9A9A9")
+        self.lbl_desc.pack(pady=(0, 20))
+        
+        self.entry_user = ctk.CTkEntry(self, placeholder_text="E-mail (ex: T3755000@timbrasil.com.br)", width=350, height=40)
+        self.entry_user.pack(pady=10)
+        # Preencher se já houver algo
+        user_atual = os.getenv("MSTR_USER", "")
+        if user_atual: self.entry_user.insert(0, user_atual)
+        
+        self.entry_pass = ctk.CTkEntry(self, placeholder_text="Senha", show="*", width=350, height=40)
+        self.entry_pass.pack(pady=10)
+        
+        self.btn_save = ctk.CTkButton(self, text="Salvar e Continuar", command=self.salvar, 
+                                      font=("Inter", 16, "bold"), width=350, height=45)
+        self.btn_save.pack(pady=30)
+
+    def salvar(self):
+        usuario = self.entry_user.get().strip()
+        senha = self.entry_pass.get().strip()
+        
+        if not usuario or not senha:
+            return
+            
+        self.callback(usuario, senha)
+        self.destroy()
 
 class AutomaApp(ctk.CTk):
     def __init__(self):
@@ -61,8 +107,12 @@ class AutomaApp(ctk.CTk):
                 self.lbl_logo.grid(row=1, column=0, pady=(0, 20))
             except Exception as e:
                 print(f"Erro ao carregar o logotipo: {e}")
+
+        # Verificação de Credenciais
+        self.verificar_configuracao()
             
         # 2. Título
+
         self.lbl_title = ctk.CTkLabel(self, text="Painel de Automação MSTR", font=("Inter", 32, "bold"))
         self.lbl_title.grid(row=2, column=0, pady=(0, 10))
             
@@ -304,6 +354,34 @@ del "%~f0"
         subprocess.Popen([batch_path], shell=True)
         self.quit()
         sys.exit()
+
+    def verificar_configuracao(self):
+        """Verifica se o .env tem as credenciais, senão abre o diálogo"""
+        user = os.getenv("MSTR_USER")
+        senha = os.getenv("MSTR_PASS")
+        
+        if not user or not senha or senha == "SUA_SENHA_AQUI":
+            self.after(500, self.abrir_dialogo_login)
+
+    def abrir_dialogo_login(self):
+        LoginConfigDialog(self, self.salvar_credenciais)
+
+    def salvar_credenciais(self, user, senha):
+        """Salva no arquivo .env e atualiza variáveis de ambiente"""
+        env_path = ".env"
+        # Cria o arquivo se não existir
+        if not os.path.exists(env_path):
+            with open(env_path, 'w') as f:
+                f.write("")
+        
+        set_key(env_path, "MSTR_USER", user)
+        set_key(env_path, "MSTR_PASS", senha)
+        
+        # Atualiza em memória
+        os.environ["MSTR_USER"] = user
+        os.environ["MSTR_PASS"] = senha
+        
+        self.atualizar_status("Configurações salvas com sucesso!")
 
 if __name__ == "__main__":
     app = AutomaApp()
