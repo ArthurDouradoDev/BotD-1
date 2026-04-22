@@ -49,7 +49,7 @@ class LoginConfigDialog(ctk.CTkToplevel):
                                     font=("Inter", 12), text_color="#A9A9A9")
         self.lbl_desc.pack(pady=(0, 20))
         
-        self.entry_user = ctk.CTkEntry(self, placeholder_text="E-mail (ex: T3755000@timbrasil.com.br)", width=350, height=40)
+        self.entry_user = ctk.CTkEntry(self, placeholder_text="E-mail (ex: T1234567@timbrasil.com.br)", width=350, height=40)
         self.entry_user.pack(pady=10)
         # Preencher se já houver algo
         user_atual = os.getenv("MSTR_USER", "")
@@ -212,37 +212,62 @@ class AutomaApp(ctk.CTk):
                 except ImportError:
                     raise Exception("Erro: Playwright driver não encontrado no pacote.")
 
+            user_data_path = os.path.join(os.getenv("APPDATA"), "BotD1", "profile")
+            
             with sync_playwright() as p:
-                browser = p.chromium.launch(headless=False, args=['--start-maximized'])
-                context = browser.new_context(no_viewport=True)
-                page = context.new_page()
+                self.after(0, self.atualizar_status, "Iniciando navegador com perfil persistente...")
+                context = p.chromium.launch_persistent_context(
+                    user_data_dir=user_data_path,
+                    headless=False,
+                    no_viewport=True,
+                    args=['--start-maximized']
+                )
+                
+                # No contexto persistente, uma página já costuma estar aberta
+                page = context.pages[0] if context.pages else context.new_page()
                 
                 self.after(0, self.atualizar_status, "Acessando URL base...")
                 url = "https://microstrategyqualidade.internal.timbrasil.com.br/MicroStrategy/servlet/mstrWeb?continue"
                 page.goto(url)
                 
-                self.after(0, self.atualizar_status, "Inserindo Credenciais (Microsoft)...")
-                email = os.getenv("MSTR_USER", "T3755000@timbrasil.com.br")
+                self.after(0, self.atualizar_status, "Verificando estado da sessão...")
                 
+                # Aguarda ou o login da Microsoft ou o Dashboard do MicroStrategy
                 try:
-                    email_input = page.wait_for_selector('input[type="email"]', state='visible', timeout=10000)
-                    if email_input:
-                        email_input.fill(email)
-                        page.locator('input[type="submit"]').click()
-                except Exception as e:
-                    print(f"Formulário de email ignorado: {e}")
+                    # Tenta encontrar o campo de e-mail ou o link do dashboard (QualiTim)
+                    # Usamos um timeout menor para a verificação inicial
+                    login_selector = 'input[type="email"]'
+                    dashboard_selector = 'a.mstrLargeIconViewItemLink'
+                    
+                    # Espera qualquer um dos dois aparecer
+                    target = page.wait_for_selector(f"{login_selector}, {dashboard_selector}", timeout=15000)
+                    
+                    if target and target.key_value_pairs == None: # Apenas para garantir que temos o elemento
+                         pass 
+
+                    # Verifica qual apareceu
+                    if page.query_selector(login_selector):
+                        self.after(0, self.atualizar_status, "Sessão não encontrada. Iniciando login (Microsoft)...")
+                        email = os.getenv("MSTR_USER", "T3755000@timbrasil.com.br")
+                        page.fill(login_selector, email)
+                        page.click('input[type="submit"]')
+                        
+                        # Processo de Senha
+                        senha = os.getenv("MSTR_PASS", "")
+                        if senha and senha != "SUA_SENHA_AQUI":
+                            senha_input = page.wait_for_selector('input[type="password"]', state='visible', timeout=15000)
+                            if senha_input:
+                                senha_input.fill(senha)
+                                page.click('input[type="submit"]')
+                        else:
+                            self.after(0, self.atualizar_status, "Senha não detectada. Preencha manualmente no portal.")
+                        
+                        self.after(0, self.atualizar_status, "Aguardando aprovação no Authenticator...")
+                    else:
+                        self.after(0, self.atualizar_status, "Sessão ativa detectada! Pulando etapa de login.")
                 
-                senha = os.getenv("MSTR_PASS", "")
-                if senha and senha != "SUA_SENHA_AQUI":
-                    try:
-                        senha_input = page.wait_for_selector('input[type="password"]', state='visible', timeout=15000)
-                        if senha_input:
-                            senha_input.fill(senha)
-                            page.locator('input[type="submit"]').click()
-                    except:
-                        self.after(0, self.atualizar_status, "Campo de senha não localizado. Siga manualmente.")
-                else:
-                    self.after(0, self.atualizar_status, "Senha não detectada no .env. Preencha manualmente no portal.")
+                except Exception as e:
+                    self.after(0, self.atualizar_status, "Não foi possível determinar o estado da sessão. Tentando prosseguir...")
                 
                 self.after(0, self.atualizar_status, "Aguardando ação do usuário...")
                 
@@ -251,7 +276,7 @@ class AutomaApp(ctk.CTk):
                 self.after(0, self.atualizar_status, "Login Concluído. Acessando Painel MicroStrategy (Fim da Fase 1)")
                 
                 page.wait_for_timeout(30000)
-                browser.close()
+                context.close()
                 self.after(0, lambda: self.btn_start.configure(state="normal"))
                 
         except Exception as e:

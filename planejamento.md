@@ -7,7 +7,7 @@ Automatizar o processo diário de login com pausas manuais necessárias (Authent
 
 ## 2. Escolha da Pilha Tecnológica (Stack)
 - **Linguagem:** Python
-- **Automação de Navegador:** `Playwright` ou `Selenium`. Recomendado: **Playwright**, devido à habilidade nativa de aguardar elementos do DOM e requisições de rede, algo indispensável considerando as páginas de "carregamento" comuns no portal MSTR. O navegador pode ser iniciado em modo janela para facilitar a etapa do Authenticator, e o restante segue invisível / em background (ou de acordo com a preferência do usuário).
+- **Automação de Navegador:** `Playwright`. Utiliza a funcionalidade de **Contexto Persistente** (`launch_persistent_context`) salvando o perfil do usuário no `%APPDATA%` do Windows. Isso garante a permanência de cookies e sessões, permitindo que o bot reconheça logins anteriores e pule etapas de MFA (Microsoft Authenticator) em execuções subsequentes.
 - **Gestão de Tempo e Datas:** Módulo `datetime` para calcular automaticamente o dia de ontem (D-1) baseando-se na data do sistema host e convertendo para o formato exigido na submissão de formulários (`dd/mm/yyyy`).
 - **Automação de E-mail:** `win32com.client` (PyWin32). Interage perfeitamente com a sessão local do portal Microsoft Outlook aberta na máquina sem necessidade de portas de SMTP na rede TIM.
 - **Configurações e Segurança:** `python-dotenv` para isolar senhas e login corporativo (`T3755000@...`) de forma não fixada (`hard-coded`) no script da automação.
@@ -15,12 +15,13 @@ Automatizar o processo diário de login com pausas manuais necessárias (Authent
 
 ## 3. RoadMap e Escopo das Fases de Desenvolvimento
 
-### Fase 1: Inicialização e Login Estratégico (O Login e a Pausa)
+### Fase 1: Inicialização e Verificação de Login Estratégico
 - **Feedback UI:** Iniciar a janela do CustomTkinter, definir o ícone (`d-1bot.ico`) e exibir status: *Iniciando Automação e Navegador...*. Por padrão, deve iniciar em tela cheia e o design deve ser no modo escuro.
 - Iniciar um contexto persistente no navegador.
 - **Navegação Inicial:** Acessar a URL base de redirecionamento (`microstrategyqualidade.internal...`).
-- **Autenticação:** O Bot digita login e senha injetando-os nos campos da Microsoft.
-- **Pausa Estratégica (MFA):** Implementar uma *espera explícita rigorosa* pelo carregamento de um seletor da página "QualiTim" (ou um input via prompt `Pressione Enter após APROVAR`), aguardando que o usuário prove no celular o push do Microsoft Authenticator.
+- **Verificação de Estado:** O Bot verifica se foi redirecionado para a página de login da Microsoft ou se o Painel MicroStrategy já está visível.
+- **Autenticação (Se necessário):** Caso não esteja logado, o Bot digita login e senha injetando-os nos campos da Microsoft.
+- **Pausa Estratégica (MFA - Se necessário):** Implementar uma *espera explícita rigorosa* pelo carregamento de um seletor da página "QualiTim", aguardando que o usuário aprove no celular o push do Microsoft Authenticator.
 
 ### Fase 2: Navegação até a Base (A Central de Inscrições)
 - **Feedback UI:** Atualizar status para: *Login Concluído. Acessando Painel MicroStrategy...*.
