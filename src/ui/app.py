@@ -53,7 +53,7 @@ class AutomaApp(ctk.CTk):
         self.lbl_status.grid(row=3, column=0, pady=(0, 40))
         
         # Botão
-        self.btn_start = ctk.CTkButton(self, text="Começar Fase 1", command=self.iniciar_fase1, 
+        self.btn_start = ctk.CTkButton(self, text="Iniciar Automação (Fases 1 e 2)", command=self.iniciar_fase1, 
                                        font=("Inter", 18, "bold"), width=300, height=50, corner_radius=8)
         self.btn_start.grid(row=4, column=0, sticky="n", pady=(0, 40))
         

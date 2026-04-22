@@ -49,18 +49,75 @@ def executar_fase1(callback_log, callback_finished):
             except Exception:
                 callback_log("Não foi possível determinar o estado da sessão. Tentando prosseguir...")
             
-            callback_log("Aguardando ação do usuário...")
+            callback_log("Aguardando carregamento do portal (MFA/Redirecionamento)...")
             page.wait_for_selector('a.mstrLargeIconViewItemLink', state='visible', timeout=120000)
             
-            callback_log("Login Concluído. Acessando Painel MicroStrategy (Fim da Fase 1)")
+            callback_log("Login Concluído. Iniciando Fase 2...")
             
-            # TODO: Placeholder para Fase 2 e 3
-            # page.wait_for_timeout(5000)
+            # --- Início da Fase 2 ---
+            executar_fase2(page, callback_log)
+            # --- Fim da Fase 2 ---
             
-            page.wait_for_timeout(30000) # Manter aberto por um tempo para visualização
+            callback_log("Processo concluído com sucesso!")
+            page.wait_for_timeout(5000) 
             context.close()
             callback_finished()
 
     except Exception as e:
-        callback_log(f"Erro na Fase 1: {type(e).__name__} - {str(e)}", True)
+        callback_log(f"Erro na automação: {type(e).__name__} - {str(e)}", True)
         callback_finished()
+
+def executar_fase2(page, callback_log):
+    """Navegação até My Subscriptions (Fase 2)"""
+    try:
+        callback_log("Acessando Painel MicroStrategy...")
+        
+        # Filtra pelo servidor "QualiTim" usando o seletor e o texto para maior segurança
+        server_selector = 'a.mstrLargeIconViewItemLink'
+        page.wait_for_selector(server_selector, state="visible", timeout=30000)
+        
+        # Tenta encontrar especificamente o que contém "Project=QualiTim" no href ou texto
+        servers = page.query_selector_all(server_selector)
+        target_server = None
+        for s in servers:
+            href = s.get_attribute("href") or ""
+            if "Project=QualiTim" in href:
+                target_server = s
+                break
+        
+        if not target_server:
+            callback_log("Servidor 'QualiTim' não identificado pelo link. Tentando clique genérico no primeiro servidor...", True)
+            target_server = page.query_selector(server_selector)
+
+        if target_server:
+            target_server.click()
+        else:
+            raise Exception("Nenhum servidor encontrado na tela de seleção.")
+
+        callback_log("Entrando em My Subscriptions...")
+        
+        subscriptions_selector = 'div.mstr-dskt-nm'
+        
+        def wait_for_subscriptions(p, retry=True):
+            try:
+                p.wait_for_selector(f"{subscriptions_selector} >> text='My Subscriptions'", state="visible", timeout=30000)
+                return True
+            except Exception:
+                if retry:
+                    callback_log("Elemento 'My Subscriptions' não apareceu. Recarregando página...")
+                    p.reload()
+                    return wait_for_subscriptions(p, retry=False)
+                return False
+
+        if not wait_for_subscriptions(page):
+            callback_log("Aguardando validação manual: O seletor 'My Subscriptions' não foi encontrado automaticamente.")
+            # Aguarda indefinidamente (ou por longo tempo) até o usuário resolver ou o elemento aparecer
+            page.wait_for_selector(f"{subscriptions_selector} >> text='My Subscriptions'", state="visible", timeout=300000)
+
+        # Clica no elemento
+        page.click(f"{subscriptions_selector} >> text='My Subscriptions'")
+        callback_log("Navegação da Fase 2 concluída: Chegamos às Subscriptions.")
+
+    except Exception as e:
+        callback_log(f"Falha na Fase 2: {str(e)}", True)
+        raise e
