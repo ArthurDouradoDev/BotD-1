@@ -4,6 +4,7 @@ import hashlib
 import json
 import subprocess
 import shutil
+import argparse
 
 def get_checksum(file_path):
     sha256_hash = hashlib.sha256()
@@ -13,6 +14,10 @@ def get_checksum(file_path):
     return sha256_hash.hexdigest()
 
 def build():
+    parser = argparse.ArgumentParser(description="Build Modular BotD-1")
+    parser.add_argument("--major", action="store_true", help="Atualiza a versão do App (EXE) além da lógica")
+    args = parser.parse_args()
+
     print("--- Iniciando Build Modular BotD-1 ---")
     
     # 1. Carregar versão atual
@@ -21,11 +26,18 @@ def build():
     
     print(f"Versão atual: App={version_data['app_version']}, Logic={version_data['logic_version']}")
     
-    # 2. Incrementar versão da lógica (ex: 1.0.0 -> 1.0.1)
+    # 2. Incrementar versão
+    if args.major:
+        # Incrementa App Version (1.0.0 -> 1.0.1)
+        app_parts = version_data['app_version'].split('.')
+        app_parts[-1] = str(int(app_parts[-1]) + 1)
+        version_data['app_version'] = ".".join(app_parts)
+        print(f"Nova versão do App: {version_data['app_version']}")
+
+    # Sempre incrementa a versão da lógica
     v_parts = version_data['logic_version'].split('.')
     v_parts[-1] = str(int(v_parts[-1]) + 1)
     version_data['logic_version'] = ".".join(v_parts)
-    
     print(f"Nova versão da lógica: {version_data['logic_version']}")
     
     # 3. Criar o logic.zip
@@ -72,9 +84,10 @@ def build():
         print(f"\n[ERRO] Ocorreu um erro inesperado: {e}")
 
     print("\n--- Processo Total Concluído! ---")
+    print(f"App Version: {version_data['app_version']} | Logic Version: {version_data['logic_version']}")
     print("Tudo o que você precisa está na pasta './dist/':")
-    print("  - BotD1.exe  (O programa principal)")
-    print("  - logic.zip  (A lógica para atualizações rápidas)")
+    print("  - BotD1.exe    (O programa principal)")
+    print("  - logic.zip    (A lógica para atualizações rápidas)")
     print("  - version.json (O controle de versões e assinaturas)")
 
 if __name__ == "__main__":
