@@ -1,4 +1,5 @@
 import os
+import sys
 import zipfile
 import hashlib
 import json
@@ -76,7 +77,7 @@ def build():
     try:
         # Roda o PyInstaller usando o arquivo .spec
         # --noconfirm sobrescreve arquivos antigos na pasta dist
-        subprocess.run(["pyinstaller", "--noconfirm", "Bot D-1.spec"], check=True)
+        subprocess.run([sys.executable, "-m", "PyInstaller", "--noconfirm", "Bot D-1.spec"], check=True)
         print("Executável gerado com sucesso!")
     except subprocess.CalledProcessError:
         print("\n[ERRO] Falha ao rodar PyInstaller. O EXE não foi atualizado.")

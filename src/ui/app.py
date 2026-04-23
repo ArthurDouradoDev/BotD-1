@@ -4,7 +4,7 @@ import customtkinter as ctk
 from PIL import Image
 from src.utils.helpers import resource_path
 from src.utils.config import is_configured, save_credentials
-from src.utils.updater import check_for_updates, download_update, apply_update
+from src.utils.updater import check_for_updates, download_update
 from src.automation.flows import executar_fase1
 from .dialogs import LoginConfigDialog, UpdateDialog
 
